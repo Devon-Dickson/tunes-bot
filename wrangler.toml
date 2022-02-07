@@ -1,0 +1,21 @@
+name = "tunes-bot-3"
+type = "webpack"
+zone_id = ""
+account_id = "71b8b36b4e3ecb2a6a7f60a46fcf0d31"
+route = ""
+workers_dev = true
+compatibility_date = "2022-02-06"
+kv_namespaces = [
+    { binding = "TUNE_STORE", id = "71dfd31464654547a68b5b2a351d07f8" }
+]
+
+[build]
+command = "npm install && npm run build"
+
+[build.upload]
+format = "modules"
+main = "./dist/worker.js"
+
+[[build.upload.rules]]
+type = "ESModule"
+globs = ["**/*.js"]
