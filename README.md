@@ -1,39 +1,58 @@
-# ʕ •́؈•̀) `worker-typescript-template`
+# 🧑‍🎤 Tunes Bot 4.0
+Cloudflare worker script to automatically parse Spotify track links from Slack into a playlist.
 
-A batteries included template for kick starting a TypeScript Cloudflare worker project.
+Adapted from https://github.com/georgejdanforth/slack-spotify-bot.
+Now with [100% less server](https://twitter.com/chriscoyier/status/983033831547686913)!
 
-## Note: You must use [wrangler](https://developers.cloudflare.com/workers/cli-wrangler/install-update) 1.17 or newer to use this template.
+## Prerequisites
+* Privileges to configure applications within your Slack workspace
+* A Spotify developer account
+* A (free) Cloudflare account
+
+### Spotify API setup
+Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications), create a new app and save the Client ID and Client Secret.
 
 ## 🔋 Getting Started
-
-This template is meant to be used with [Wrangler](https://github.com/cloudflare/wrangler). If you are not already familiar with the tool, we recommend that you install the tool and configure it to work with your [Cloudflare account](https://dash.cloudflare.com). Documentation can be found [here](https://developers.cloudflare.com/workers/tooling/wrangler/).
-
-To generate using Wrangler, run this command:
-
 ```bash
-wrangler generate my-ts-project https://github.com/cloudflare/worker-typescript-template
+# Install Wrangler
+npm install -g wrangler@beta
+
+# Authenticate with Cloudflare
+wrangler login
+
+# Create a new Cloudflare Worker from this template
+wrangler generate tunes-bot https://github.com/Devon-Dickson/tunes-bot
+
+# Add your Spotify Client ID and Client Secret as Cloudflare Environment Variables
+wrangler secret put SPOTIFY_CLIENT_ID
+wrangler secret put SPOTIFY_CLIENT_SECRET
+
+# Create a KV store namespace for your worker - don't forget to copy the output and add it to your wrangler.toml
+wrangler kv:namespace create "TUNE_STORE"
 ```
 
-### 👩 💻 Developing
+Next, modify the `CLOUDFLARE_URI` and `SPOTIFY_PLAYLIST_ID` values in `src/constants.ts`. These are just URIs, not secrets.
 
-[`src/index.ts`](./src/index.ts) calls the request handler in [`src/handler.ts`](./src/handler.ts), and will return the [request method](https://developer.mozilla.org/en-US/docs/Web/API/Request/method) for the given request.
+```bash
+# Publish your worker
+wrangler publish
+```
 
-### 🧪 Testing
+### Connecting to Spotify
 
-This template comes with jest tests which simply test that the request handler can handle each request method. `npm test` will run your tests.
+1. After you have published the worker, go back to the Spotify developer dashboard. Navigate to the app you created and click _Edit Settings_
+2. Add `<your-worker-uri>/callback/` to the redirect URIs and save
+3. In your browser, navigate to `http://<your-worker-uri>/login/`. It should return a blank page with the text `Success`
 
-### ✏️ Formatting
+### Connecting to Slack
 
-This template uses [`prettier`](https://prettier.io/) to format the project. To invoke, run `npm run format`.
+1. Go to https://api.slack.com/apps and click _Create New App_. Give the app a name and select the workspace you want to enable it in.
+2. Enable _Event Subscriptions_. This should open up a new set of options.
+3. Under _Request URL_, enter `http://<your-worker_uri>/`. It should validate automatically.
+4. Add the `links_shared` workspace event
+5. Add open.spotify.com as an _App Unfurl Domain_
+6. Save changes
+7. Navigate back to _Basic Information_ and install the app in your workspace.
+8. Add your Slack bot to the channel you want it to watch for links.
 
-### 👀 Previewing and Publishing
-
-For information on how to preview and publish your worker, please see the [Wrangler docs](https://developers.cloudflare.com/workers/tooling/wrangler/commands/#publish).
-
-## 🤢 Issues
-
-If you run into issues with this specific project, please feel free to file an issue [here](https://github.com/cloudflare/worker-typescript-template/issues). If the problem is with Wrangler, please file an issue [here](https://github.com/cloudflare/wrangler/issues).
-
-## ⚠️ Caveats
-
-The `service-worker-mock` used by the tests is not a perfect representation of the Cloudflare Workers runtime. It is a general approximation. We recommend that you test end to end with `wrangler dev` in addition to a [staging environment](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments/) to test things before deploying.
+You're all done! Posting Spotify links in any channel the bot is invited to should now add the tracks to the playlist specified by `SPOTIFY_PLAYLIST_ID`.
